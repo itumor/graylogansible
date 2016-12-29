@@ -1,5 +1,5 @@
 --- # Install mongodb 
-- hosts: dbprimary
+- hosts: db
   sudo: yes
   tasks:
   - name: kill all mongod process
@@ -14,7 +14,7 @@
        state=present
   - name: Add nodesource apt key
     become: yes
-    shell: curl -s https://www.mongodb.org/static/pgp/server-3.4.asc | apt-key add -
+    shell: apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
   - name: Add mongo sources list
     sudo: yes
     lineinfile: >
@@ -22,9 +22,18 @@
        dest=/etc/apt/sources.list.d/mongodb.list
        state=present
        create=yes
+  - name: Pass options to dpkg on run
+    apt:
+     upgrade: dist
+     update_cache: yes
+     dpkg_options: 'force-confold,force-confdef'
+  - name: remove package mongo
+    apt: name=mongodb-org state=absent
+  - name: install package mongo
+    apt: name=mongodb-org state=present update_cache=yes  dpkg_options='force-confold,force-confdef'  cache_valid_time=3600 force=yes
   - name: Install mongo
     sudo: yes
-    apt: name=mongodb-org state=latest update_cache=yes
+    apt: name=mongodb-org state=latest dpkg_options='force-confold,force-confdef'  update_cache=yes cache_valid_time=3600 force=yes
   - name: start mongodb
     service: >
       name=mongod
@@ -38,6 +47,10 @@
     service: >
       name=mongod
       state=stopped
+
+- hosts: dbprimary
+  sudo: yes
+  tasks:      
   - name: replSet
     sudo: yes 
     shell: sudo mongod --port 27017 --dbpath /var/lib/mongodb --replSet rs01 & noub  
