@@ -1,0 +1,51 @@
+--- # Install mongodb 
+- hosts: dbprimary
+  sudo: yes
+  tasks:
+  - name: kill all mongod process
+    sudo: yes
+    shell: pkill mongod
+    ignore_errors: yes
+  - name: Add mongo ppa key
+    sudo: yes
+    apt_key: >
+       keyserver=hkp://keyserver.ubuntu.com:80
+       id=7F0CEB10
+       state=present
+  - name: Add nodesource apt key
+    become: yes
+    shell: curl -s https://www.mongodb.org/static/pgp/server-3.4.asc | apt-key add -
+  - name: Add mongo sources list
+    sudo: yes
+    lineinfile: >
+       line="deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse"
+       dest=/etc/apt/sources.list.d/mongodb.list
+       state=present
+       create=yes
+  - name: Install mongo
+    sudo: yes
+    apt: name=mongodb-org state=latest update_cache=yes
+  - name: start mongodb
+    service: >
+      name=mongod
+      state=started 
+  - name: start mongodb
+    service: >
+      name=mongod
+      state=restarted
+  - name: start mongodb
+    sudo: yes
+    service: >
+      name=mongod
+      state=stopped
+  - name: replSet
+    sudo: yes 
+    shell: sudo mongod --port 27017 --dbpath /var/lib/mongodb --replSet rs01 & noub  
+    async: 55
+  - name: replSet setup
+    sudo: yes
+    shell: chmod 777 /home/user/playbook/rs.sh && sh /home/user/playbook/rs.sh	
+    ignore_errors: yes
+  - name: replSet conf
+    sudo: yes
+    shell: mongo --eval "rs.conf()" && mongo --eval "rs.status()"
