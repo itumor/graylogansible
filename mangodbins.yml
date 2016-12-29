@@ -51,8 +51,13 @@
     sudo: yes
     shell: sudo mongod --port 27017 --dbpath /var/lib/mongodb --replSet rs01 & noub
     async: 55
+  - name: start mongodb
+    service: >
+      name=mongod
+      state=started
 
-- hosts: dbprimary
+
+- hosts: db
   sudo: yes
   tasks:      
   - name: start mongodb
