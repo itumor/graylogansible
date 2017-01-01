@@ -1,0 +1,74 @@
+--- # Install mongodb 
+- hosts: db
+  sudo: yes
+  tasks:
+  - name:  remove mongodb-org
+    sudo: yes
+    shell:   dpkg --configure -a && apt-get autoremove --purge mongodb-org -y
+  - name: kill all mongod process
+    sudo: yes
+    shell: pkill mongod
+    ignore_errors: yes
+  - name: Add mongo ppa key
+    sudo: yes
+    apt_key: >
+       keyserver=hkp://keyserver.ubuntu.com:80
+       id=7F0CEB10
+       state=present
+  - name: Add nodesource apt key
+    become: yes
+    shell: apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10
+  - name: Add mongo sources list
+    sudo: yes
+    lineinfile: >
+       line="deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse"
+       dest=/etc/apt/sources.list.d/mongodb.list
+       state=present
+       create=yes
+  - name: Pass options to dpkg on run
+    apt:
+     upgrade: dist
+     update_cache: yes
+     dpkg_options: 'force-confold,force-confdef'
+  - name: remove package mongo
+    apt: name=mongodb-org state=absent
+  - name: install package mongo
+    apt: name=mongodb-org state=present update_cache=yes  dpkg_options='force-confold,force-confdef'  cache_valid_time=3600 force=yes
+  - name: Install mongo
+    sudo: yes
+    apt: name=mongodb-org state=latest dpkg_options='force-confold,force-confdef'  update_cache=yes cache_valid_time=3600 force=yes
+  - name: start mongodb
+    service: >
+      name=mongod
+      state=started 
+  - name: start mongodb
+    service: >
+      name=mongod
+      state=restarted
+  - name: start mongodb
+    sudo: yes
+    service: >
+      name=mongod
+      state=stopped
+  - name: kill all mongod process
+    sudo: yes
+    shell: pkill mongod
+    ignore_errors: yes
+
+  - name: replSet
+    sudo: yes
+    shell:  mongod --port 27017 --dbpath /var/lib/mongodb --replSet rs01 & noub
+    async: 55
+
+- hosts: dbprimary
+  sudo: yes
+  tasks:
+
+
+  - name: replSet conf
+    sudo: yes
+    shell: mongo --eval "rs.conf()" && mongo --eval "rs.status()"
+  
+  - name: ADD replSet 
+    sudo: yes
+    shell: mongo --eval 'rs.add("172.31.45.7")' &&  mongo --eval 'rs.add("172.31.45.2")'
